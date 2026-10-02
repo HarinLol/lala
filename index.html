@@ -299,6 +299,14 @@ button:focus-visible,.btn:focus-visible,.tile:focus-visible,input:focus-visible,
 .hp-segments .hp-seg i{display:block!important;position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:0!important;height:100%!important;border-radius:4px!important;background-clip:padding-box!important;opacity:1}
 .hp-segments .hp-seg.hp-empty i{opacity:0!important;width:0!important;background:transparent!important;box-shadow:none!important}
 @media(max-width:430px){.hp-segments{gap:2px!important;height:14px!important}}
+
+/* ===== HP LAYER BLOCKS ===== */
+.hp-segments{display:flex!important;flex-direction:column!important;gap:2px!important;width:100%!important;max-width:340px!important;height:auto!important;filter:none!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.hp-layer-row{display:grid!important;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;width:100%;height:11px}
+.hp-block{display:block;position:relative;overflow:hidden;height:11px;min-width:0;border-radius:3px;background:#0b0d13;border:1px solid #ffffff18;box-shadow:inset 0 1px 2px #0009}
+.hp-block i{position:absolute;left:0;top:0;bottom:0;display:block;height:100%;border-radius:2px;transition:width .22s ease}
+.hp-block.hp-base{border-color:#ef334055}.hp-block.hp-elite{border-color:#ffe34d66}.hp-block.hp-extra{border-color:#ff8f2266}
+@media(max-width:430px){.hp-segments{gap:1px!important}.hp-layer-row{gap:2px;height:10px}.hp-block{height:10px;border-radius:2px}}
 </style></head><body><main id="app" aria-label="coolig game"></main>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -808,30 +816,23 @@ function enemyHpLayerState(e){
  return {max,total,base:basePool,elite:elitePool,extra:extraPool,baseRem,eliteRem,extraRem,layer,remaining,pool,ratio};
 }
 function enemyHpSegments(e){
- const st=enemyHpLayerState(e),count=30;
- const filled=Math.max(0,Math.min(count,Math.ceil(st.ratio*count)));
- const colors={
-  base:'linear-gradient(180deg,#ff5a67 0%,#ef3340 55%,#c91532 100%)',
-  elite:'linear-gradient(180deg,#fff58a 0%,#ffe04a 55%,#d9a915 100%)',
-  extra:'linear-gradient(180deg,#ffc05b 0%,#ff8f22 55%,#dc560b 100%)',
-  empty:'transparent'
+ const st=enemyHpLayerState(e),count=9;
+ const rows=[];
+ const makeRow=(name,remaining,pool,color,glow)=>{
+  if(pool<=0)return '';
+  const ratio=Math.max(0,Math.min(1,remaining/pool));
+  const exact=ratio*count;
+  let html='';
+  for(let i=0;i<count;i++){
+   const fill=Math.max(0,Math.min(1,exact-i));
+   html+=`<span class="hp-block hp-${name}"><i style="width:${fill*100}%;background:${color};box-shadow:${glow}"></i></span>`;
+  }
+  return `<div class="hp-layer-row hp-row-${name}" aria-hidden="true">${html}</div>`;
  };
- const glow={
-  base:'0 0 8px rgba(239,51,64,.72), inset 0 1px rgba(255,190,198,.8)',
-  elite:'0 0 9px rgba(255,225,73,.78), inset 0 1px rgba(255,253,208,.9)',
-  extra:'0 0 9px rgba(255,139,33,.78), inset 0 1px rgba(255,224,168,.9)',
-  empty:'none'
- };
- const parts=[];
- for(let i=0;i<count;i++){
-  const on=i<filled;
-  const layer=on?st.layer:'empty';
-  const cls='hp-'+layer;
-  const bg=colors[layer];
-  const shadow=glow[layer];
-  parts.push(`<span class="hp-seg ${cls}" aria-hidden="true"><i style="width:${on?100:0}%;background:${bg};box-shadow:${shadow};opacity:${on?1:0}"></i></span>`);
- }
- return parts.join('');
+ rows.push(makeRow('base',st.baseRem,st.base,'linear-gradient(180deg,#ff6874,#ef3340 58%,#b90f2c)','0 0 7px rgba(239,51,64,.7)'));
+ if(st.elite>0) rows.push(makeRow('elite',st.eliteRem,st.elite,'linear-gradient(180deg,#fff58a,#ffe04a 58%,#c99b12)','0 0 8px rgba(255,225,73,.78)'));
+ if(st.extra>0) rows.push(makeRow('extra',st.extraRem,st.extra,'linear-gradient(180deg,#ffc05b,#ff8f22 58%,#d9570a)','0 0 8px rgba(255,139,33,.78)'));
+ return rows.join('');
 }
 function updateEnemyHpBar(){
  const e=B&&B.e;if(!e)return;
